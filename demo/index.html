@@ -1,0 +1,2061 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Animpath Demo</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      /* Palette inspired by Tetrisly / Light Clean Theme */
+      --bg-app: #f4f5f7;
+      --bg-surface: #ffffff;
+      --bg-sidebar: #ffffff;
+
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-accent: #5e5ce6;
+      /* Purple/Blue */
+
+      --border-color: #e5e5e5;
+      --border-focus: #5e5ce6;
+
+      --primary: #5e5ce6;
+      --primary-hover: #4b4acf;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+      --radius: 8px;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-mono);
+      margin: 0;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: 100vh;
+      transition: grid-template-columns 0.25s ease;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      transition: padding 0.25s ease;
+    }
+
+    .sidebar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0;
+      color: var(--text-primary);
+      min-width: 0;
+    }
+
+    .brand svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--primary);
+    }
+
+    .sidebar-toggle {
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .sidebar-toggle:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #f5f4ff;
+    }
+
+    .sidebar-toggle i {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: #f4f4f5;
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: #f0f0ff;
+      /* Very light purple */
+      color: var(--primary);
+    }
+
+    .nav-item i {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem 1rem 0;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-align: center;
+      opacity: 0.8;
+    }
+
+    .app-layout.sidebar-collapsed {
+      grid-template-columns: 84px 1fr;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar {
+      padding: 1rem 0.65rem;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-top {
+      flex-direction: column;
+      margin-bottom: 1.5rem;
+    }
+
+    .app-layout.sidebar-collapsed .brand {
+      justify-content: center;
+    }
+
+    .app-layout.sidebar-collapsed .brand span {
+      display: none;
+    }
+
+    .app-layout.sidebar-collapsed .nav-item {
+      justify-content: center;
+      padding: 0.75rem;
+    }
+
+    .app-layout.sidebar-collapsed .nav-item span {
+      display: none;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-footer {
+      display: none;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-toggle i {
+      transform: rotate(180deg);
+    }
+
+    /* Main Content */
+    .main-content {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 2rem 3rem;
+    }
+
+    .header {
+      margin-bottom: 2.5rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      margin: 0 0 0.5rem 0;
+      font-weight: 600;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    /* Sections (Tabs) */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Unified Examples Layout */
+    .examples-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .example-link-card {
+      align-items: flex-start;
+      text-decoration: none;
+      color: inherit;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+    }
+
+    .example-link-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .example-page-shell {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    .example-page-back {
+      display: inline-block;
+      margin-bottom: 1.25rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .example-hero {
+      min-height: calc(100vh - 220px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #ffffff 0%, #f5f7fb 100%);
+      padding: 2rem;
+    }
+
+    .example-hero-icon {
+      width: min(58vw, 360px);
+      height: min(58vw, 360px);
+      stroke: var(--primary);
+      stroke-width: 2.25;
+      fill: none;
+    }
+
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .dashboard-card {
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 1.1rem;
+    }
+
+    .dashboard-card svg {
+      width: 72px;
+      height: 72px;
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .pricing-tabs {
+      display: inline-flex;
+      gap: 0.5rem;
+      background: #f6f7fb;
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      padding: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .pricing-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pricing-tab.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pricing-panels {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pricing-panel {
+      display: none;
+    }
+
+    .pricing-panel.active {
+      display: block;
+    }
+
+    .pricing-icon {
+      width: 88px;
+      height: 88px;
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+      margin-bottom: 0.25rem;
+    }
+
+    .docs-example-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+      padding-bottom: 4rem;
+    }
+
+    .docs-topic {
+      align-items: flex-start;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+
+    .docs-topic-header {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+
+    .docs-topic-header h3 {
+      margin: 0 0 0.35rem 0;
+      font-size: 1rem;
+    }
+
+    .docs-topic-header p {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .docs-topic-icon {
+      width: 80px;
+      height: 80px;
+      stroke: var(--primary);
+      stroke-width: 5;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .docs-topic-code {
+      width: 100%;
+      margin: 0;
+      background: #17181b;
+      color: #e5e7eb;
+      border: 1px solid #32353a;
+      border-radius: 10px;
+      padding: 0.95rem 1rem;
+      overflow: auto;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      font-family: var(--font-mono);
+    }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .example-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .example-item {
+      position: relative;
+    }
+
+    .example-item:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .example-description {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: rgba(29, 29, 31, 0.95);
+      color: white;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .example-description::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(29, 29, 31, 0.95);
+    }
+
+    .example-item:hover .example-description {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-12px);
+    }
+
+    .example-item h3 {
+      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      width: 100%;
+      text-align: left;
+    }
+
+    .example-preview {
+      width: 100%;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      border-radius: 4px;
+      border: 1px dashed var(--border-color);
+    }
+
+    .example-preview svg {
+      width: 80px;
+      height: 80px;
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .examples-controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      position: sticky;
+      bottom: 2rem;
+      box-shadow: var(--shadow-md);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .control-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      border-radius: 6px;
+    }
+
+    .control-btn:hover {
+      background: #f4f4f5;
+      color: var(--primary);
+    }
+
+    .control-btn i {
+      width: 24px;
+      height: 24px;
+    }
+
+    .control-btn span {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Old Grid & Card styles removed/replaced by above */
+
+    /* Wizard Styles Override */
+    .wizard-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 2.5rem;
+      margin-top: 0;
+      border: none;
+      padding: 0;
+      align-items: start;
+    }
+
+    .wizard-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      padding: 2rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      position: sticky;
+      top: 2rem;
+    }
+
+    .wizard-input textarea {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      width: 100%;
+      min-height: 140px;
+      padding: 1rem;
+      border-radius: 8px;
+      resize: vertical;
+      transition: all 0.2s ease;
+    }
+
+    .wizard-input textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.1);
+    }
+
+    .file-upload {
+      margin-top: 0.5rem;
+    }
+
+    .upload-outline-btn {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.55rem 0.8rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .upload-outline-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d1d6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .upload-outline-btn:active {
+      transform: translateY(0);
+      background: #f3f4f6;
+    }
+
+    .upload-outline-btn i {
+      width: 14px;
+      height: 14px;
+    }
+
+    .wizard-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .wizard-options select,
+    .wizard-options input[type='number'],
+    .wizard-options input[type='color'] {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .wizard-options select:focus,
+    .wizard-options input[type='number']:focus,
+    .wizard-options input[type='color']:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.1);
+    }
+
+    .wizard-options select:disabled,
+    .wizard-options input:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .wizard-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .wizard-actions button {
+      flex: 1;
+      padding: 0.8rem 1.2rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .wizard-actions button.primary {
+      background: linear-gradient(135deg, var(--primary) 0%, #7c7ae6 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(94, 92, 230, 0.25);
+    }
+
+    .wizard-actions button.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(94, 92, 230, 0.35);
+      filter: brightness(1.05);
+    }
+
+    .wizard-actions button.primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(94, 92, 230, 0.3);
+    }
+
+    .wizard-actions button:not(.primary) {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .wizard-actions button:not(.primary):hover {
+      background: #f9fafb;
+      border-color: #d1d1d6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .wizard-actions button:not(.primary):active {
+      transform: translateY(0);
+      background: #f3f4f6;
+    }
+
+    .wizard-actions button i {
+      width: 18px;
+      height: 18px;
+    }
+
+    .wizard-display {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .wizard-preview {
+      background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      min-height: 350px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wizard-preview::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle,
+          rgba(94, 92, 230, 0.03) 0%,
+          transparent 70%);
+      pointer-events: none;
+    }
+
+    .wizard-preview svg {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+    }
+
+    /* Code Section with Tabs */
+    .wizard-code-section {
+      background: #1e1e20;
+      border: 1px solid #333;
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wizard-tabs {
+      display: flex;
+      background: #252528;
+      border-bottom: 1px solid #333;
+      padding: 0 0.5rem;
+    }
+
+    .wizard-tab {
+      padding: 0.8rem 1.2rem;
+      color: #9ca3af;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      position: relative;
+      font-family: var(--font-mono);
+      transition: all 0.2s ease;
+      border-radius: 0;
+    }
+
+    .wizard-tab:hover {
+      color: #e5e7eb;
+    }
+
+    .wizard-tab.active {
+      color: #ffffff;
+    }
+
+    .wizard-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary);
+    }
+
+    .wizard-code {
+      padding: 1.5rem;
+      overflow: hidden;
+      color: #e5e5e5;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      max-height: 260px;
+      position: relative;
+    }
+
+    .wizard-code pre {
+      margin: 0;
+    }
+
+    .library-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    .library-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      padding: 2rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      position: sticky;
+      top: 2rem;
+    }
+
+    .library-controls-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .library-controls-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .library-toggle-btn {
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-primary);
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .library-toggle-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #f5f4ff;
+    }
+
+    .library-controls-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .library-controls-body.is-hidden {
+      display: none;
+    }
+
+    .library-layout.is-controls-collapsed {
+      grid-template-columns: 96px minmax(0, 1fr);
+    }
+
+    .library-layout.is-controls-collapsed .library-controls {
+      padding: 0.75rem;
+    }
+
+    .library-layout.is-controls-collapsed .library-controls-head {
+      justify-content: center;
+    }
+
+    .library-layout.is-controls-collapsed .library-controls-label {
+      display: none;
+    }
+
+    .library-layout.is-controls-collapsed .library-toggle-btn {
+      width: 100%;
+      padding: 0.5rem 0.35rem;
+      font-size: 0.72rem;
+    }
+
+    .library-search-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    #library-source,
+    .library-search-row input,
+    .library-style-grid select,
+    .library-style-grid input[type='number'] {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    #library-source:focus,
+    .library-search-row input:focus,
+    .library-style-grid select:focus,
+    .library-style-grid input[type='number']:focus,
+    .library-style-grid input[type='color']:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.1);
+    }
+
+    .library-search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.65rem;
+      align-items: center;
+    }
+
+    .library-search-row button {
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary) 0%, #7c7ae6 100%);
+      box-shadow: 0 4px 15px rgba(94, 92, 230, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    .library-search-row button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .library-status {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      min-height: 1.2rem;
+    }
+
+    .library-warning {
+      margin: 0;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid #f3d8a8;
+      border-radius: 8px;
+      background: #fff8ea;
+      color: #7a5a20;
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    .library-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.65rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 0.85rem;
+      max-height: 280px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .library-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: #fbfbfd;
+      padding: 0.65rem 0.5rem;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    .library-item:hover {
+      border-color: var(--primary);
+      background: #f5f4ff;
+    }
+
+    .library-item.active {
+      border-color: var(--primary);
+      background: #f0f0ff;
+      box-shadow: 0 0 0 2px rgba(94, 92, 230, 0.08);
+    }
+
+    .library-item img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+
+    .library-item-name {
+      font-size: 0.72rem;
+      text-align: center;
+      width: 100%;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .library-item-prefix {
+      font-size: 0.66rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .library-style-panel {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      background: #ffffff;
+      padding: 0.75rem 1rem;
+    }
+
+    .library-style-details {
+      display: block;
+    }
+
+    .library-style-title {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .library-style-title::-webkit-details-marker {
+      display: none;
+    }
+
+    .library-style-title::after {
+      content: '+';
+      font-size: 0.9rem;
+    }
+
+    .library-style-details[open] .library-style-title {
+      margin-bottom: 0.75rem;
+    }
+
+    .library-style-details[open] .library-style-title::after {
+      content: '-';
+    }
+
+    .library-style-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+
+    .library-style-grid label {
+      margin-bottom: 0.1rem;
+    }
+
+    .library-style-grid input[type='color'] {
+      width: 100%;
+      height: 38px;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .library-style-grid input[type='range'] {
+      width: 100%;
+    }
+
+    .library-inline-inputs {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .library-inline-inputs input[type='number'] {
+      width: 86px;
+    }
+
+    .library-angle-value {
+      width: 62px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .library-angle-value.is-disabled {
+      opacity: 0.5;
+    }
+
+    .library-gradient-toggle {
+      margin-top: 0.2rem;
+    }
+
+    .library-preview {
+      background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      min-height: 350px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .library-preview::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle,
+          rgba(94, 92, 230, 0.03) 0%,
+          transparent 70%);
+      pointer-events: none;
+    }
+
+    .library-preview-icon-wrap {
+      width: 170px;
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      position: relative;
+      z-index: 1;
+    }
+
+    .library-preview-canvas {
+      width: 100%;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      border: 1px solid #ebecf2;
+      background: #f3f4f8;
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+    }
+
+    .library-preview svg {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .library-preview-empty {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .library-code {
+      padding: 1.5rem;
+      overflow: auto;
+      color: #e5e5e5;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      max-height: 280px;
+      position: relative;
+    }
+
+    .library-code pre {
+      margin: 0;
+    }
+
+    .guide-table-wrap {
+      width: 100%;
+      overflow: hidden;
+      max-width: 100%;
+      position: relative;
+    }
+
+    .guide-code-block {
+      overflow: hidden;
+      max-height: 260px;
+      position: relative;
+    }
+
+    .library-copy-btn {
+      margin-left: auto;
+      border: 1px solid #45454a;
+      color: #d1d5db;
+      background: transparent;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      align-self: center;
+      transition: all 0.2s ease;
+    }
+
+    .library-copy-btn:hover {
+      border-color: #818cf8;
+      color: #ffffff;
+    }
+
+    @media (max-width: 1200px) {
+
+      .wizard-layout,
+      .library-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .library-layout.is-controls-collapsed {
+        grid-template-columns: 1fr;
+      }
+
+      .wizard-controls,
+      .library-controls {
+        position: static;
+      }
+
+      .app-layout.sidebar-collapsed {
+        grid-template-columns: 260px 1fr;
+      }
+
+      .app-layout.sidebar-collapsed .sidebar {
+        padding: 1.5rem;
+      }
+
+      .app-layout.sidebar-collapsed .sidebar-top {
+        flex-direction: row;
+        margin-bottom: 2rem;
+      }
+
+      .app-layout.sidebar-collapsed .brand {
+        justify-content: flex-start;
+      }
+
+      .app-layout.sidebar-collapsed .brand span,
+      .app-layout.sidebar-collapsed .nav-item span,
+      .app-layout.sidebar-collapsed .sidebar-footer {
+        display: initial;
+      }
+
+      .app-layout.sidebar-collapsed .nav-item {
+        justify-content: flex-start;
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    label {
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <i data-lucide="zap"></i><span>Animpath</span>
+        </div>
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-expanded="true"
+          aria-label="Collapse sidebar" title="Collapse sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item active" data-tab="gallery">
+          <i data-lucide="layout-grid"></i><span>Effects</span>
+        </li>
+        <li class="nav-item" data-tab="wizard">
+          <i data-lucide="wand-2"></i><span>Wizard</span>
+        </li>
+        <li class="nav-item" data-tab="library">
+          <i data-lucide="search"></i><span>Library</span>
+        </li>
+        <li class="nav-item" data-tab="examples">
+          <i data-lucide="folders"></i><span>Examples</span>
+        </li>
+        <li class="nav-item" data-tab="guide">
+          <i data-lucide="book"></i><span>Guide</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">v1.0.3</div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Examples Section -->
+      <section id="gallery" class="section active">
+        <header class="header">
+          <h1>Effects</h1>
+          <p>Explore built-in animation effects and patterns.</p>
+        </header>
+        <div id="examples-root" class="examples-container"></div>
+      </section>
+      <!-- Wizard Section -->
+      <section id="wizard" class="section">
+        <header class="header">
+          <h1>Wizard</h1>
+          <p>Create and test custom SVG animations.</p>
+        </header>
+        <div id="wizard-root"></div>
+      </section>
+
+      <!-- Library Section -->
+      <section id="library" class="section">
+        <header class="header">
+          <h1>Library</h1>
+          <p>
+            Search popular icon sets, animate line SVGs, and copy ready-to-use
+            code.
+          </p>
+        </header>
+        <div id="library-root"></div>
+      </section>
+
+      <!-- Examples List Section -->
+      <section id="examples" class="section">
+        <header class="header">
+          <h1>Examples</h1>
+          <p>Browse example pages.</p>
+        </header>
+
+        <div class="examples-container">
+          <a href="/examples/landing-page" class="card example-link-card">
+            <h3 style="margin: 0 0 0.5rem 0">Landing Page Example</h3>
+            <p style="margin: 0; color: var(--text-secondary)">
+              Large centered SVG hero icon with animation on page load.
+            </p>
+          </a>
+          <a href="/examples/dashboard" class="card example-link-card">
+            <h3 style="margin: 0 0 0.5rem 0">Dashboard Example</h3>
+            <p style="margin: 0; color: var(--text-secondary)">
+              Placeholder content for a SaaS analytics dashboard demo.
+            </p>
+          </a>
+          <a href="/examples/pricing" class="card example-link-card">
+            <h3 style="margin: 0 0 0.5rem 0">Pricing Page Example</h3>
+            <p style="margin: 0; color: var(--text-secondary)">
+              Placeholder content for a pricing tiers and plan comparison demo.
+            </p>
+          </a>
+          <a href="/examples/docs" class="card example-link-card">
+            <h3 style="margin: 0 0 0.5rem 0">Docs Page Example</h3>
+            <p style="margin: 0; color: var(--text-secondary)">
+              Placeholder content for documentation and code snippets demo.
+            </p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Example: Landing Page -->
+      <section id="example-landing" class="section">
+        <div class="example-page-shell">
+          <a href="/examples" class="example-page-back">← Back to Examples</a>
+          <header class="header">
+            <h1>Landing Page Example</h1>
+            <p>Large centered SVG hero icon animating on load.</p>
+          </header>
+          <div class="example-hero">
+            <svg id="landing-hero-icon" class="example-hero-icon" viewBox="0 0 120 120"
+              xmlns="http://www.w3.org/2000/svg" aria-label="Animated landing hero icon">
+              <circle cx="60" cy="60" r="44"></circle>
+              <path d="M60 20 L82 60 L60 100 L38 60 Z"></path>
+              <line x1="18" y1="60" x2="102" y2="60"></line>
+            </svg>
+            <p style="margin: 0; color: var(--text-secondary)">
+              Placeholder hero area for a full landing page composition.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Example: Dashboard -->
+      <section id="example-dashboard" class="section">
+        <div class="example-page-shell">
+          <a href="/examples" class="example-page-back">&larr; Back to Examples</a>
+          <header class="header">
+            <h1>Dashboard Example</h1>
+            <p>Three dashboard cards with auto-animated SVG icons.</p>
+          </header>
+          <div class="dashboard-cards">
+            <div class="card dashboard-card">
+              <svg id="dashboard-icon-analytics" viewBox="0 0 120 120" aria-label="Analytics icon">
+                <rect x="16" y="20" width="88" height="80" rx="8"></rect>
+                <line x1="30" y1="82" x2="30" y2="58"></line>
+                <line x1="50" y1="82" x2="50" y2="44"></line>
+                <line x1="70" y1="82" x2="70" y2="66"></line>
+                <line x1="90" y1="82" x2="90" y2="36"></line>
+              </svg>
+              <h3 style="margin: 0">Analytics</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder KPI trends and performance highlights.
+              </p>
+            </div>
+            <div class="card dashboard-card">
+              <svg id="dashboard-icon-users" viewBox="0 0 120 120" aria-label="Users icon">
+                <circle cx="42" cy="44" r="13"></circle>
+                <circle cx="78" cy="44" r="11"></circle>
+                <path d="M24 86 C24 72, 34 64, 46 64 C58 64, 68 72, 68 86"></path>
+                <path d="M62 86 C62 74, 70 67, 80 67 C90 67, 98 74, 98 86"></path>
+              </svg>
+              <h3 style="margin: 0">Users</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder user cohorts and active segment snapshots.
+              </p>
+            </div>
+            <div class="card dashboard-card">
+              <svg id="dashboard-icon-alerts" viewBox="0 0 120 120" aria-label="Alerts icon">
+                <path d="M60 18 L102 96 H18 Z"></path>
+                <line x1="60" y1="46" x2="60" y2="72"></line>
+                <circle cx="60" cy="84" r="2"></circle>
+              </svg>
+              <h3 style="margin: 0">Alerts</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder alert feed and incident status overview.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Example: Pricing -->
+      <section id="example-pricing" class="section">
+        <div class="example-page-shell">
+          <a href="/examples" class="example-page-back">&larr; Back to Examples</a>
+          <header class="header">
+            <h1>Pricing Page Example</h1>
+            <p>Switch tabs to preview different pricing tiers and trigger icon animation.</p>
+          </header>
+
+          <div class="pricing-tabs" role="tablist" aria-label="Pricing tiers">
+            <button class="pricing-tab active" type="button" role="tab" data-pricing-tab="starter" aria-selected="true">
+              Starter
+            </button>
+            <button class="pricing-tab" type="button" role="tab" data-pricing-tab="pro" aria-selected="false">
+              Pro
+            </button>
+            <button class="pricing-tab" type="button" role="tab" data-pricing-tab="enterprise" aria-selected="false">
+              Enterprise
+            </button>
+          </div>
+
+          <div class="pricing-panels">
+            <article class="card pricing-panel active" data-pricing-panel="starter" style="align-items: flex-start">
+              <svg id="pricing-icon-starter" class="pricing-icon" viewBox="0 0 120 120" aria-label="Starter plan icon">
+                <circle cx="60" cy="60" r="42"></circle>
+                <path d="M34 64 L52 82 L86 44"></path>
+              </svg>
+              <h3 style="margin: 0 0 0.4rem 0">Starter</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder starter tier with core features and basic usage limits.
+              </p>
+            </article>
+
+            <article class="card pricing-panel" data-pricing-panel="pro" style="align-items: flex-start">
+              <svg id="pricing-icon-pro" class="pricing-icon" viewBox="0 0 120 120" aria-label="Pro plan icon">
+                <rect x="22" y="22" width="76" height="76" rx="10"></rect>
+                <path d="M40 70 L60 42 L80 70"></path>
+                <line x1="60" y1="42" x2="60" y2="84"></line>
+              </svg>
+              <h3 style="margin: 0 0 0.4rem 0">Pro</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder professional tier with expanded limits and workflow tools.
+              </p>
+            </article>
+
+            <article class="card pricing-panel" data-pricing-panel="enterprise" style="align-items: flex-start">
+              <svg id="pricing-icon-enterprise" class="pricing-icon" viewBox="0 0 120 120"
+                aria-label="Enterprise plan icon">
+                <path d="M60 18 L98 40 V80 L60 102 L22 80 V40 Z"></path>
+                <line x1="60" y1="18" x2="60" y2="102"></line>
+                <line x1="22" y1="40" x2="98" y2="40"></line>
+              </svg>
+              <h3 style="margin: 0 0 0.4rem 0">Enterprise</h3>
+              <p style="margin: 0; color: var(--text-secondary)">
+                Placeholder enterprise tier with advanced controls and dedicated support.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Example: Docs -->
+      <section id="example-docs" class="section">
+        <div class="example-page-shell">
+          <a href="/examples" class="example-page-back">← Back to Examples</a>
+          <header class="header">
+            <h1>Docs Page Example</h1>
+            <p>Long-form documentation layout with section-by-section icon reveals.</p>
+          </header>
+          <div class="docs-example-stack">
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" data-docs-icon data-docs-type="fromCenter" data-docs-duration="1200"
+                  viewBox="0 0 120 120" aria-label="Install section icon">
+                  <path d="M24 44 L60 24 L96 44 V86 L60 106 L24 86 Z"></path>
+                  <line x1="24" y1="44" x2="60" y2="64"></line>
+                  <line x1="96" y1="44" x2="60" y2="64"></line>
+                  <line x1="60" y1="64" x2="60" y2="106"></line>
+                </svg>
+                <div>
+                  <h3>1. Install</h3>
+                  <p>Add Animpath with npm and keep the runtime tiny with zero dependencies.</p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">npm install animpath</pre>
+            </div>
+
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" data-docs-icon data-docs-type="delayed" data-docs-duration="1400"
+                  viewBox="0 0 120 120" aria-label="Quick start icon">
+                  <rect x="20" y="20" width="80" height="80" rx="10"></rect>
+                  <path d="M52 44 L82 60 L52 76 Z"></path>
+                  <line x1="34" y1="90" x2="86" y2="90"></line>
+                </svg>
+                <div>
+                  <h3>2. Quick Start</h3>
+                  <p>Target an SVG and configure timing, easing, and scheduling in one call.</p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">import { StrokeSVG } from 'animpath';
+
+const anim = new StrokeSVG('#logo', {
+  type: 'delayed',
+  duration: 1500,
+  easing: 'easeInOut',
+  start: 'manual'
+});
+
+anim.play();</pre>
+            </div>
+
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" style="stroke-width: 1.5" data-docs-icon data-docs-type="fromCenter"
+                  data-docs-duration="1650" viewBox="0 0 48 48" aria-label="Scheduling icon">
+                  <path
+                    d="m23.979 36.55l5.244-2.711v5.685L24.07 42.5zm5.244-2.712L16.924 27.89l.156-8.601l7.105 3.553l12.403-6.327V35.65l-11.936-5.703v-5.75l5.209-2.578l1.707.914v5.19l-6.916-3.526m6.918-1.663l-.037-3.44">
+                  </path>
+                  <path
+                    d="M24.07 42.5L6.327 33.54V8.344l5.62-2.843l12.163 6.082l12.158-5.966l5.404 2.639v24.79L36.59 35.65">
+                  </path>
+                  <path
+                    d="m6.327 8.343l17.796 8.734l17.55-8.823m-17.55 8.823l.063 5.765m-.207 13.708l-12.383-6.104l.094-13.992l5.391 2.836">
+                  </path>
+                </svg>
+                <div>
+                  <h3>3. Scheduling Strategy</h3>
+                  <p>Choose path orchestration modes like <code>wave</code>, <code>oneByOne</code>, or
+                    <code>fromCenter</code>.
+                  </p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">new StrokeSVG(svg, {
+  type: 'wave',
+  duration: 1700,
+  staggerDelay: 60
+});</pre>
+            </div>
+
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" data-docs-icon data-docs-type="sync" data-docs-duration="1300"
+                  viewBox="0 0 120 120" aria-label="Viewport trigger icon">
+                  <path
+                    d="M14 60 C28 32, 46 22, 60 22 C74 22, 92 32, 106 60 C92 88, 74 98, 60 98 C46 98, 28 88, 14 60 Z">
+                  </path>
+                  <circle cx="60" cy="60" r="18"></circle>
+                  <circle cx="60" cy="60" r="4"></circle>
+                </svg>
+                <div>
+                  <h3>4. Viewport Trigger</h3>
+                  <p>Use <code>start: 'inViewport'</code> so each icon animates only when the user reaches it.</p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">new StrokeSVG(svg, {
+  start: 'inViewport',
+  viewportThreshold: 0.35,
+  viewportRootMargin: '0px 0px -12% 0px'
+});</pre>
+            </div>
+
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" data-docs-icon data-docs-type="oneByOne" data-docs-duration="1450"
+                  viewBox="0 0 120 120" aria-label="Callbacks icon">
+                  <circle cx="60" cy="60" r="38"></circle>
+                  <path d="M60 30 V64 L82 78"></path>
+                  <path d="M26 56 L18 60 L26 64"></path>
+                  <path d="M94 56 L102 60 L94 64"></path>
+                </svg>
+                <div>
+                  <h3>5. Lifecycle Callbacks</h3>
+                  <p>Track progress and completion for analytics, choreography, or UI state.</p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">new StrokeSVG(svg, {
+  onStart: () => console.log('start'),
+  onProgress: (p) => console.log('progress', p),
+  onComplete: () => console.log('done')
+});</pre>
+            </div>
+
+            <div class="card docs-topic">
+              <div class="docs-topic-header">
+                <svg class="docs-topic-icon" data-docs-icon data-docs-type="converge" data-docs-duration="1500"
+                  viewBox="0 0 120 120" aria-label="Auto-init icon">
+                  <rect x="18" y="22" width="84" height="76" rx="8"></rect>
+                  <line x1="30" y1="38" x2="90" y2="38"></line>
+                  <line x1="30" y1="54" x2="72" y2="54"></line>
+                  <line x1="30" y1="70" x2="78" y2="70"></line>
+                  <path d="M84 58 L96 70 L84 82"></path>
+                </svg>
+                <div>
+                  <h3>6. Data Attribute Auto-Init</h3>
+                  <p>Scan the page and initialize all tagged SVGs without manual wiring.</p>
+                </div>
+              </div>
+              <pre class="docs-topic-code">&lt;svg data-animpath data-animpath-options='{"type":"delayed","duration":1200}'&gt;...&lt;/svg&gt;
+import { scan } from 'animpath';
+scan();</pre>
+            </div>
+
+            <div class="card docs-topic" style="margin-bottom: 3rem">
+              <p style="margin: 0; color: var(--text-secondary); line-height: 1.6">
+                This section is intentionally long so icon animations are triggered progressively as you scroll.
+                Every docs icon uses <code>renderMode: 'outline'</code> and a viewport trigger.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Guide Section -->
+      <section id="guide" class="section">
+        <header class="header">
+          <h1>Guide</h1>
+          <p>Learn how to use Animpath in your projects.</p>
+        </header>
+
+        <div class="card" style="align-items: flex-start; max-width: 800px; margin: 0 auto">
+          <h2>Installation</h2>
+          <p style="line-height: 1.6; margin-bottom: 1.5rem">
+            Install via npm or use a CDN. View the package on
+            <a href="https://www.npmjs.com/package/animpath" target="_blank"
+              style="color: var(--primary); text-decoration: none; font-weight: 500">npmjs.com</a>.
+          </p>
+          <pre class="guide-code-block" data-lang="bash" style="
+                background: #1e1e20;
+                color: #e5e5e5;
+                padding: 1rem 1.5rem;
+                border-radius: var(--radius);
+                width: 100%;
+                border: 1px solid #333;
+                margin: 1rem 0;
+                font-size: 0.85rem;
+              ">
+npm install animpath</pre>
+
+          <h2>Quick Start</h2>
+          <pre class="guide-code-block" data-lang="javascript" style="
+                background: #1e1e20;
+                color: #e5e5e5;
+                padding: 1.5rem;
+                border-radius: var(--radius);
+                width: 100%;
+                border: 1px solid #333;
+                margin: 1rem 0;
+                font-size: 0.85rem;
+              ">
+import { StrokeSVG } from 'animpath';
+
+const anim = new StrokeSVG('#my-svg', {
+  type: 'delayed',
+  duration: 1500,
+  easing: 'easeInOut',
+  start: 'manual',
+});
+
+anim.play();</pre>
+
+          <h2>Constructor</h2>
+          <p style="line-height: 1.6">
+            <code>new StrokeSVG(target, options?)</code>
+          </p>
+          <ul style="
+                line-height: 1.6;
+                padding-left: 1.5rem;
+              ">
+            <li>
+              <code>target</code>: CSS selector, <code>SVGElement</code>, or
+              an <code>HTMLElement</code> containing an SVG.
+            </li>
+            <li><code>options</code>: animation configuration object.</li>
+          </ul>
+
+          <h2>All Parameters</h2>
+          <div class="guide-table-wrap">
+            <table style="
+                  width: 100%;
+                  border-collapse: collapse;
+                  font-size: 0.85rem;
+                ">
+              <thead>
+                <tr>
+                  <th style="
+                        text-align: left;
+                        padding: 0.6rem;
+                        border-bottom: 1px solid var(--border-color);
+                      ">
+                    Option
+                  </th>
+                  <th style="
+                        text-align: left;
+                        padding: 0.6rem;
+                        border-bottom: 1px solid var(--border-color);
+                      ">
+                    Type
+                  </th>
+                  <th style="
+                        text-align: left;
+                        padding: 0.6rem;
+                        border-bottom: 1px solid var(--border-color);
+                      ">
+                    Default
+                  </th>
+                  <th style="
+                        text-align: left;
+                        padding: 0.6rem;
+                        border-bottom: 1px solid var(--border-color);
+                      ">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 0.6rem"><code>type</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>'delayed' | 'sync' | 'oneByOne' | 'stagger' |
+                        'randomOrder' | 'fromCenter' | 'converge' | 'wave'</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>'delayed'</code></td>
+                  <td style="padding: 0.6rem">
+                    Scheduling strategy for multi-path SVGs.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>duration</code></td>
+                  <td style="padding: 0.6rem"><code>number</code></td>
+                  <td style="padding: 0.6rem"><code>1500</code></td>
+                  <td style="padding: 0.6rem">
+                    Total animation duration in milliseconds.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>easing</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>'linear' | 'easeIn' | 'easeOut' | 'easeInOut' |
+                        'easeInBack' | 'easeOutBounce' | 'easeOutElastic' | (t:
+                        number) => number</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>'linear'</code></td>
+                  <td style="padding: 0.6rem">
+                    Easing preset name or custom easing function.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>start</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>'auto' | 'manual' | 'inViewport'</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>'auto'</code></td>
+                  <td style="padding: 0.6rem">When animation starts.</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>delay</code></td>
+                  <td style="padding: 0.6rem"><code>number</code></td>
+                  <td style="padding: 0.6rem"><code>0</code></td>
+                  <td style="padding: 0.6rem">
+                    Initial delay before animation begins (ms).
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>staggerDelay</code></td>
+                  <td style="padding: 0.6rem"><code>number</code></td>
+                  <td style="padding: 0.6rem"><code>50</code></td>
+                  <td style="padding: 0.6rem">
+                    Delay between path starts for staggered modes (ms).
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>direction</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>'normal' | 'reverse'</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>'normal'</code></td>
+                  <td style="padding: 0.6rem">
+                    Draw direction of the stroke animation.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>loop</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>boolean | number</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>false</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>true</code> loops forever. Numeric loop counts are
+                    accepted but finite loop counting is not fully implemented
+                    yet.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>convertShapes</code></td>
+                  <td style="padding: 0.6rem"><code>boolean</code></td>
+                  <td style="padding: 0.6rem"><code>true</code></td>
+                  <td style="padding: 0.6rem">
+                    Convert non-path SVG shapes to paths before animation.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem">
+                    <code>viewportThreshold</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>number</code></td>
+                  <td style="padding: 0.6rem"><code>0.1</code></td>
+                  <td style="padding: 0.6rem">
+                    Intersection ratio to trigger start when using
+                    <code>start: 'inViewport'</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem">
+                    <code>viewportRootMargin</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>string</code></td>
+                  <td style="padding: 0.6rem"><code>'0px'</code></td>
+                  <td style="padding: 0.6rem">
+                    Root margin passed to IntersectionObserver.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>onStart</code></td>
+                  <td style="padding: 0.6rem"><code>() => void</code></td>
+                  <td style="padding: 0.6rem"><code>-</code></td>
+                  <td style="padding: 0.6rem">
+                    Callback invoked when <code>play()</code> starts.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>onProgress</code></td>
+                  <td style="padding: 0.6rem">
+                    <code>(progress: number) => void</code>
+                  </td>
+                  <td style="padding: 0.6rem"><code>-</code></td>
+                  <td style="padding: 0.6rem">
+                    Progress callback with value in <code>[0..1]</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.6rem"><code>onComplete</code></td>
+                  <td style="padding: 0.6rem"><code>() => void</code></td>
+                  <td style="padding: 0.6rem"><code>-</code></td>
+                  <td style="padding: 0.6rem">
+                    Callback after one animation cycle completes.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Animation Type Behavior</h2>
+          <ul style="
+                line-height: 1.6;
+                padding-left: 1.5rem;
+              ">
+            <li><code>sync</code>: all paths animate simultaneously.</li>
+            <li>
+              <code>oneByOne</code>: each path completes before next path.
+            </li>
+            <li>
+              <code>delayed</code>/<code>stagger</code>: overlapping starts
+              controlled by <code>staggerDelay</code>.
+            </li>
+            <li>
+              <code>randomOrder</code>: one-by-one but in shuffled order.
+            </li>
+            <li><code>fromCenter</code>: center paths start first.</li>
+            <li><code>converge</code>: outer paths start first.</li>
+            <li><code>wave</code>: sinusoidal delay distribution.</li>
+          </ul>
+
+          <h2>Instance Methods</h2>
+          <ul style="
+                line-height: 1.6;
+                padding-left: 1.5rem;
+              ">
+            <li><code>play()</code>: start or resume.</li>
+            <li><code>pause()</code>: pause current animation.</li>
+            <li><code>reset()</code>: rewind to start state.</li>
+            <li><code>reverse()</code>: toggle draw direction.</li>
+            <li>
+              <code>seek(progress)</code>: jump to a progress point 0..1.
+            </li>
+            <li><code>destroy()</code>: cleanup observers and internals.</li>
+            <li>
+              <code>finished</code>: Promise that resolves when current cycle
+              completes.
+            </li>
+          </ul>
+
+          <h2>Static Helper</h2>
+          <pre class="guide-code-block" data-lang="javascript" style="
+                background: #1e1e20;
+                color: #e5e5e5;
+                padding: 1.5rem;
+                border-radius: var(--radius);
+                width: 100%;
+                border: 1px solid #333;
+                margin: 1rem 0;
+                font-size: 0.85rem;
+              ">
+import { StrokeSVG } from 'animpath';
+
+const instance = StrokeSVG.fromString(
+  '&lt;svg viewBox="0 0 24 24"&gt;&lt;path d="M4 12h16" /&gt;&lt;/svg&gt;',
+  '#preview',
+  { type: 'sync', duration: 900, start: 'auto' }
+);
+            </pre>
+
+          <h2>CDN / Embed</h2>
+          <pre class="guide-code-block" data-lang="xml" style="
+                background: #1e1e20;
+                color: #e5e5e5;
+                padding: 1.5rem;
+                border-radius: var(--radius);
+                width: 100%;
+                border: 1px solid #333;
+                margin: 1rem 0;
+                font-size: 0.85rem;
+              ">
+&lt;script src="https://unpkg.com/animpath@latest/dist/animpath.umd.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const svg = document.querySelector('#my-svg');
+  const anim = new AnimPath.StrokeSVG(svg, {
+    type: 'wave',
+    duration: 1600,
+    easing: 'easeInOut',
+    start: 'manual',
+  });
+
+  anim.play();
+&lt;/script&gt;
+            </pre>
+
+          <h2>Data Attribute Auto Init</h2>
+          <pre class="guide-code-block" data-lang="xml" style="
+                background: #1e1e20;
+                color: #e5e5e5;
+                padding: 1.5rem;
+                border-radius: var(--radius);
+                width: 100%;
+                border: 1px solid #333;
+                margin: 1rem 0;
+                font-size: 0.85rem;
+              ">
+&lt;svg
+  data-animpath
+  data-animpath-options='{"type":"delayed","duration":1200,"easing":"easeInOut"}'
+  viewBox="0 0 24 24"
+&gt;
+  &lt;path d="M4 12h16" stroke="currentColor" fill="none" /&gt;
+&lt;/svg&gt;
+
+&lt;script type="module"&gt;
+  import { scan } from 'animpath';
+  scan();
+&lt;/script&gt;
+            </pre>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./demo.ts"></script>
+</body>
+
+</html>
