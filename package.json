@@ -6,10 +6,10 @@
   "main": "./dist/animpath.umd.js",
   "unpkg": "./dist/animpath.umd.js",
   "module": "./dist/animpath.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/src/index.d.ts",
       "import": "./dist/animpath.js",
       "require": "./dist/animpath.umd.js"
     }
