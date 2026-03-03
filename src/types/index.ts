@@ -100,14 +100,21 @@ export interface StrokeSVGOptions {
   onProgress?: (progress: number) => void;
   /** Callback when animation completes */
   onComplete?: () => void;
+  /**
+   * Optional logger for diagnostic warnings.
+   * Defaults to `console.warn`. Provide a no-op `{ warn: () => {} }` to silence
+   * warnings in production, or redirect to your own logging pipeline.
+   */
+  logger?: { warn: (msg: string) => void };
 }
 
 /**
  * Internal normalized options with defaults applied.
  */
-export interface NormalizedStrokeSVGOptions extends Required<Omit<StrokeSVGOptions, 'easing' | 'onStart' | 'onProgress' | 'onComplete'>> {
+export interface NormalizedStrokeSVGOptions extends Required<Omit<StrokeSVGOptions, 'easing' | 'onStart' | 'onProgress' | 'onComplete' | 'logger'>> {
   easing: EasingFunction;
   onStart?: () => void;
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
+  logger?: { warn: (msg: string) => void };
 }

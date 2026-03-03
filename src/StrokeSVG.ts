@@ -41,7 +41,13 @@ function normalizeOptions(options?: StrokeSVGOptions): NormalizedStrokeSVGOption
     onStart: o.onStart,
     onProgress: o.onProgress,
     onComplete: o.onComplete,
+    logger: o.logger,
   };
+}
+
+/** Emit a warning through the configured logger (defaults to console.warn). */
+function warn(opts: NormalizedStrokeSVGOptions, msg: string): void {
+  (opts.logger?.warn ?? console.warn)(msg);
 }
 
 export class StrokeSVG {
@@ -66,7 +72,7 @@ export class StrokeSVG {
 
     const svg = getSVGElement(target);
     if (!svg || svg.tagName?.toLowerCase() !== 'svg') {
-      console.warn('StrokeSVG: target is not a valid SVG element');
+      warn(this._options, 'StrokeSVG: target is not a valid SVG element');
       this._finishResolve?.();
       return;
     }
@@ -75,7 +81,7 @@ export class StrokeSVG {
     const { paths } = parseSVG(this._svg, this._options.convertShapes);
 
     if (paths.length === 0) {
-      console.warn('StrokeSVG: no drawable paths found in SVG');
+      warn(this._options, 'StrokeSVG: no drawable paths found in SVG');
       this._finishResolve?.();
       return;
     }
@@ -132,6 +138,18 @@ export class StrokeSVG {
 
   private _setupViewportObserver(): void {
     if (!this._svg) return;
+
+    // Respect prefers-reduced-motion: skip the observer and instantly reveal the SVG.
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reducedMotion) {
+      this.seek(1);
+      this._finishResolve?.();
+      return;
+    }
+
     const obs = new ViewportObserver(
       this._svg,
       {
